@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Note Application</string>
+
+    <!-- Menu Item -->
+    <string name="menu_item_search">Search</string>
+    <string name="menu_item_about_app">About App</string>
+    <string name="menu_item_help">Help</string>
+    <string name="menu_item_version_app">Version %s</string>
+
+    <!-- Main Screen -->
+    <string name="navigation_drawer_open" translatable="false">Open navigation drawer</string>
+    <string name="navigation_drawer_close" translatable="false">Close navigation drawer</string>
+    <string name="add_button">Add Note</string>
+
+    <!-- Note Screen -->
+    <string name="note_done_button">Done</string>
+
+
+</resources>

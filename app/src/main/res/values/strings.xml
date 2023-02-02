@@ -12,6 +12,8 @@
     <string name="navigation_drawer_close" translatable="false">Close navigation drawer</string>
     <string name="add_button">Add Note</string>
 
+    <string name="pin">Pinned</string>
+    <string name="others">Others</string>
     <!-- Note Screen -->
     <string name="note_done_button">Done</string>
 

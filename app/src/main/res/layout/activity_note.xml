@@ -5,8 +5,8 @@
     android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#00BCD4"
-    android:backgroundTint="#00BCD4"
+    android:background="#80DEEA"
+    android:backgroundTint="#80DEEA"
     tools:context=".NoteActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout

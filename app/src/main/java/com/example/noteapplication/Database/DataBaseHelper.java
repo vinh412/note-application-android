@@ -64,12 +64,78 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return true;
     }
 
-    public List<NoteModel> getALLNotes(){
+    public List<NoteModel> getAllNotes(){
 
         List<NoteModel> notes = new ArrayList<>();
 
         // get data from the database
         String queryString = "SELECT * FROM " + NOTE_TABLE;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(queryString, null);
+        if(cursor.moveToFirst()){
+            // loop through the cursor (result set) and create new note objects then put them into the list
+            do {
+                int id = cursor.getInt(0);
+                int isPinned = cursor.getInt(1);
+                String header = cursor.getString(2);
+                String content = cursor.getString(3);
+                String dateCreated = cursor.getString(4);
+                String lastModified = cursor.getString(5);
+
+                NoteModel note = new NoteModel(id, isPinned, header, content, dateCreated, lastModified);
+                notes.add(note);
+            }while (cursor.moveToNext());
+        }
+        else {
+            // failure, do not add anything to the list.
+        }
+
+        // close both the cursor and the db when done.
+        cursor.close();
+        db.close();
+
+        return notes;
+    }
+
+    public List<NoteModel> getAllPinnedNotes(){
+
+        List<NoteModel> notes = new ArrayList<>();
+
+        // get data from the database
+        String queryString = "SELECT * FROM " + NOTE_TABLE + " WHERE " + COLUMN_PIN + " = " + 1;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(queryString, null);
+        if(cursor.moveToFirst()){
+            // loop through the cursor (result set) and create new note objects then put them into the list
+            do {
+                int id = cursor.getInt(0);
+                int isPinned = cursor.getInt(1);
+                String header = cursor.getString(2);
+                String content = cursor.getString(3);
+                String dateCreated = cursor.getString(4);
+                String lastModified = cursor.getString(5);
+
+                NoteModel note = new NoteModel(id, isPinned, header, content, dateCreated, lastModified);
+                notes.add(note);
+            }while (cursor.moveToNext());
+        }
+        else {
+            // failure, do not add anything to the list.
+        }
+
+        // close both the cursor and the db when done.
+        cursor.close();
+        db.close();
+
+        return notes;
+    }
+
+    public List<NoteModel> getAllOthersNotes(){
+
+        List<NoteModel> notes = new ArrayList<>();
+
+        // get data from the database
+        String queryString = "SELECT * FROM " + NOTE_TABLE + " WHERE " + COLUMN_PIN + " = " + 0;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(queryString, null);
         if(cursor.moveToFirst()){

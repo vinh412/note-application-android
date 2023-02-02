@@ -39,9 +39,15 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private ActionBarDrawerToggle drawerToggle;
     private FloatingActionButton floatingActionButton;
 
-    private RecyclerView recyclerView;
-    private NoteRecyclerViewAdapter noteRecyclerViewAdapter;
-    private List<NoteModel> notes = new ArrayList<>();
+    private RecyclerView pinRecyclerView;
+    private RecyclerView othersRecyclerView;
+    private NoteRecyclerViewAdapter pinRecyclerViewAdapter;
+    private NoteRecyclerViewAdapter othersRecyclerViewAdapter;
+
+    private List<NoteModel> allNotes = new ArrayList<>();
+    private List<NoteModel> pinnedNotes = new ArrayList<>();
+    private List<NoteModel> otherNotes = new ArrayList<>();
+
     private NoteModel selectedNote;
 
     private final DataBaseHelper dataBaseHelper = new DataBaseHelper(this);
@@ -59,9 +65,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                                 Toast.makeText(MainActivity.this, "Deleted empty note!", Toast.LENGTH_SHORT).show();
                             }else {
                                 dataBaseHelper.addOne(newNote);
-                                notes.clear();
-                                notes.addAll(dataBaseHelper.getALLNotes());
-                                noteRecyclerViewAdapter.notifyDataSetChanged();
+                                pinnedNotes.clear();
+                                pinnedNotes.addAll(dataBaseHelper.getAllPinnedNotes());
+                                pinRecyclerViewAdapter.notifyDataSetChanged();
+
+                                otherNotes.clear();
+                                otherNotes.addAll(dataBaseHelper.getAllOthersNotes());
+                                othersRecyclerViewAdapter.notifyDataSetChanged();
                                 Toast.makeText(MainActivity.this, "Add new note completed!", Toast.LENGTH_SHORT).show();
                             }
                         }else if(whatButton.equals(VALUE_NOTE_ITEM)){
@@ -72,9 +82,14 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                             else{
                                 dataBaseHelper.updateOne(selectedNote, updateNote.isPinned(), updateNote.getHeader(), updateNote.getContent(), updateNote.getLastModified());
                                 Toast.makeText(MainActivity.this, "Save changes!", Toast.LENGTH_SHORT).show();
-                                notes.clear();
-                                notes.addAll(dataBaseHelper.getALLNotes());
-                                noteRecyclerViewAdapter.notifyDataSetChanged();
+
+                                pinnedNotes.clear();
+                                pinnedNotes.addAll(dataBaseHelper.getAllPinnedNotes());
+                                pinRecyclerViewAdapter.notifyDataSetChanged();
+
+                                otherNotes.clear();
+                                otherNotes.addAll(dataBaseHelper.getAllOthersNotes());
+                                othersRecyclerViewAdapter.notifyDataSetChanged();
                             }
                         }
                     }
@@ -85,8 +100,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        recyclerView = this.findViewById(R.id.recyclerView);
+
+        pinRecyclerView = this.findViewById(R.id.pinRecyclerView);
+        othersRecyclerView = this.findViewById(R.id.othersRecyclerView);
+
         floatingActionButton = findViewById(R.id.fab);
+
         drawerLayout = findViewById(R.id.activity_main_drawer);
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
 
@@ -103,18 +122,31 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         });
 
         // get data from database and show them on the screen
-        notes = dataBaseHelper.getALLNotes();
+        allNotes = dataBaseHelper.getAllNotes();
+        pinnedNotes = dataBaseHelper.getAllPinnedNotes();
+        otherNotes = dataBaseHelper.getAllOthersNotes();
 
-        updateRecycle(notes);
+        if(pinnedNotes.size() == 0){
+            updateOthersRecycler(otherNotes);
+        }else{
+            updatePinRecycler(pinnedNotes);
+            updateOthersRecycler(otherNotes);
+        }
     }
 
-    private void updateRecycle(List<NoteModel> notes) {
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL));
-        noteRecyclerViewAdapter = new NoteRecyclerViewAdapter(this, notes, noteClickListener);
-        recyclerView.setAdapter(noteRecyclerViewAdapter);
+    private void updatePinRecycler(List<NoteModel> notes) {
+        pinRecyclerView.setHasFixedSize(true);
+        pinRecyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL));
+        pinRecyclerViewAdapter = new NoteRecyclerViewAdapter(this, notes, noteClickListener);
+        pinRecyclerView.setAdapter(pinRecyclerViewAdapter);
     }
 
+    private void updateOthersRecycler(List<NoteModel> notes){
+        othersRecyclerView.setHasFixedSize(true);
+        othersRecyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL));
+        othersRecyclerViewAdapter = new NoteRecyclerViewAdapter(this, notes, noteClickListener);
+        othersRecyclerView.setAdapter(othersRecyclerViewAdapter);
+    }
     private final NoteClickListener noteClickListener = new NoteClickListener() {
         @Override
         public void onCLick(NoteModel note) {
@@ -181,8 +213,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         switch (item.getItemId()){
             case R.id.delete:
                 dataBaseHelper.deleteOne(selectedNote);
-                notes.remove(selectedNote);
-                noteRecyclerViewAdapter.notifyDataSetChanged();
+                if(selectedNote.isPinned() == 1)
+                    pinnedNotes.remove(selectedNote);
+                else
+                    otherNotes.remove(selectedNote);
+                pinRecyclerViewAdapter.notifyDataSetChanged();
+                othersRecyclerViewAdapter.notifyDataSetChanged();
                 Toast.makeText(this, "Note deleted!", Toast.LENGTH_SHORT).show();
                 return true;
         }

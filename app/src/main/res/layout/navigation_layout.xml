@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -46,7 +47,7 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <ListView
-                android:id="@+id/lableListView"
+                android:id="@+id/lable_list_view"
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
                 android:layout_marginStart="8dp"
@@ -55,17 +56,22 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/constraintLayout2" />
 
-            <ImageButton
-                android:id="@+id/imageButton"
+            <Button
+                android:id="@+id/add_label_button"
                 android:layout_width="0dp"
                 android:layout_height="56dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
-                android:contentDescription="Thêm nhãn"
+                android:backgroundTint="@android:color/transparent"
+                android:drawableLeft="@drawable/ic_add"
+                android:fontFamily="sans-serif"
+                android:text="Thêm nhãn"
+                android:textAlignment="textStart"
+                android:textAllCaps="false"
+                android:textColor="#000000"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/lableListView"
-                app:srcCompat="@drawable/ic_add" />
+                app:layout_constraintTop_toBottomOf="@+id/lable_list_view" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>

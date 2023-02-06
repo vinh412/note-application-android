@@ -52,9 +52,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         String createLabelNoteTable = "CREATE TABLE " + LABEL_NOTE_TABLE +
                 " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COLUMN_LABEL_ID + " INTEGER, " + COLUMN_NOTE_ID + " INTEGER)";
+                COLUMN_LABEL_ID + " INTEGER REFERENCES " + LABEL_TABLE + "(" + COLUMN_ID + "), " +
+                COLUMN_NOTE_ID + " INTEGER REFERENCES " + NOTE_TABLE + "(" + COLUMN_ID + "))";
         db.execSQL(createNotesTableStatement);
         db.execSQL(createLabelTableStatement);
+        db.execSQL(createLabelNoteTable);
     }
 
     // this is called if the database version number changes. It prevents previous users apps from breaking when you change the database design.
@@ -125,6 +127,35 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         db.close();
 
         return notes;
+    }
+
+    public List<LabelModel> getAllLabels(){
+        List<LabelModel> labels = new ArrayList<>();
+
+        // get data from the database
+        String queryString = "SELECT * FROM " + LABEL_TABLE;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(queryString, null);
+        if(cursor.moveToFirst()){
+            // loop through the cursor (result set) and create new note objects then put them into the list
+            do {
+                int id = cursor.getInt(0);
+                String labelName = cursor.getString(1);
+                String dateCreated = cursor.getString(2);
+
+                LabelModel label = new LabelModel(id, labelName, dateCreated);
+                labels.add(label);
+            }while (cursor.moveToNext());
+        }
+        else {
+            // failure, do not add anything to the list.
+        }
+
+        // close both the cursor and the db when done.
+        cursor.close();
+        db.close();
+
+        return labels;
     }
 
     public List<NoteModel> getAllPinnedNotes(){

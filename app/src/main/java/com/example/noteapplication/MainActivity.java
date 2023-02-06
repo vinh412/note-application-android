@@ -18,12 +18,17 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.example.noteapplication.Adapter.LabelListViewAdapter;
 import com.example.noteapplication.Adapter.NoteRecyclerViewAdapter;
 import com.example.noteapplication.Database.DataBaseHelper;
+import com.example.noteapplication.Model.LabelModel;
 import com.example.noteapplication.Model.NoteModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -45,9 +50,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private NoteRecyclerViewAdapter pinRecyclerViewAdapter;
     private NoteRecyclerViewAdapter othersRecyclerViewAdapter;
 
+    private ListView labelListView;
+
     private List<NoteModel> allNotes = new ArrayList<>();
     private List<NoteModel> pinnedNotes = new ArrayList<>();
     private List<NoteModel> otherNotes = new ArrayList<>();
+    private List<LabelModel> allLabels = new ArrayList<>();
 
     private NoteModel selectedNote;
 
@@ -66,6 +74,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         drawerLayout = findViewById(R.id.activity_main_drawer);
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
 
+        labelListView = drawerLayout.findViewById(R.id.lable_list_view);
+        Button addLabel = drawerLayout.findViewById(R.id.add_label_button);
+        addLabel.setOnClickListener(e -> {
+            dataBaseHelper.addOne(new LabelModel(-1, "First Label", "06-02-2023"));
+        });
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
 
@@ -83,12 +97,17 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         pinnedNotes = dataBaseHelper.getAllPinnedNotes();
         otherNotes = dataBaseHelper.getAllOthersNotes();
 
+        allLabels = dataBaseHelper.getAllLabels();
+
         if(pinnedNotes.size() == 0){
             updateOthersRecycler(otherNotes);
         }else{
             updatePinRecycler(pinnedNotes);
             updateOthersRecycler(otherNotes);
         }
+
+        LabelListViewAdapter labelModelArrayAdapter = new LabelListViewAdapter(this, R.layout.listview_item_layout, allLabels);
+        labelListView.setAdapter(labelModelArrayAdapter);
     }
 
     private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(

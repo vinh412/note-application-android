@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
+import com.example.noteapplication.Model.LabelModel;
 import com.example.noteapplication.Model.NoteModel;
 
 import java.util.ArrayList;
@@ -23,6 +24,13 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DATE_CREATED = "DATE_CREATED";
     public static final String COLUMN_LAST_MODIFIED = "LAST_MODIFIED";
 
+    public static final String LABEL_TABLE = "LABEL_TABLE";
+    public static final String COLUMN_LABEL_NAME = "LABEL_NAME";
+
+    public static final String LABEL_NOTE_TABLE = "LABEL_NOTE_TABLE";
+    public static final String COLUMN_LABEL_ID = "LABEL_ID";
+    public static final String COLUMN_NOTE_ID = "NOTE_ID";
+
     public DataBaseHelper(@Nullable Context context) {
         super(context, "notes.db", null, 1);
     }
@@ -30,7 +38,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     // this is called the first time a database is accessed. There should be code in here to create a new database
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String createTableStatement = "CREATE TABLE " + NOTE_TABLE +
+        String createNotesTableStatement = "CREATE TABLE " + NOTE_TABLE +
                 " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COLUMN_PIN + " INTEGER, " +
                 COLUMN_HEADER + " TEXT, " +
@@ -38,7 +46,15 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 COLUMN_DATE_CREATED + " TEXT, " +
                 COLUMN_LAST_MODIFIED + " TEXT)";
 
-        db.execSQL(createTableStatement);
+        String createLabelTableStatement = "CREATE TABLE " + LABEL_TABLE +
+                " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_LABEL_NAME + " TEXT, " + COLUMN_DATE_CREATED + " TEXT)";
+
+        String createLabelNoteTable = "CREATE TABLE " + LABEL_NOTE_TABLE +
+                " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_LABEL_ID + " INTEGER, " + COLUMN_NOTE_ID + " INTEGER)";
+        db.execSQL(createNotesTableStatement);
+        db.execSQL(createLabelTableStatement);
     }
 
     // this is called if the database version number changes. It prevents previous users apps from breaking when you change the database design.
@@ -58,6 +74,20 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_LAST_MODIFIED, note.getLastModified());
 
         long insert = db.insert(NOTE_TABLE, null, cv);
+        if(insert == -1)
+            return false;
+        else
+            return true;
+    }
+
+    public boolean addOne(LabelModel label){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+
+        cv.put(COLUMN_LABEL_NAME, label.getLabelName());
+        cv.put(COLUMN_DATE_CREATED, label.getDateCreated());
+
+        long insert = db.insert(LABEL_TABLE, null, cv);
         if(insert == -1)
             return false;
         else
@@ -191,7 +221,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 COLUMN_HEADER + " = '" + newHeader + "', " +
                 COLUMN_CONTENT + " = '" + newContent + "', " +
                 COLUMN_LAST_MODIFIED + " = '" + lastModified +
-                "' WHERE " + COLUMN_ID + " = " + note.getId();
+                "' WHERE " + COLUMN_ID + " = " + note.getID();
         Cursor cursor = db.rawQuery(queryString, null);
         if(cursor.moveToFirst()){
             return true;
@@ -204,7 +234,21 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         // find note in the database. if it is found, delete it and return true.
         // if it is not found, return false.
         SQLiteDatabase db = this.getWritableDatabase();
-        String queryString = "DELETE FROM " + NOTE_TABLE + " WHERE " + COLUMN_ID + " = " + note.getId();
+        String queryString = "DELETE FROM " + NOTE_TABLE + " WHERE " + COLUMN_ID + " = " + note.getID();
+
+        Cursor cursor = db.rawQuery(queryString, null);
+        if(cursor.moveToFirst()){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public boolean deleteOne(LabelModel label){
+        // find label in the database. if it is found, delete it and return true.
+        // if it is not found, return false.
+        SQLiteDatabase db = this.getWritableDatabase();
+        String queryString = "DELETE FROM " + LABEL_TABLE + " WHERE " + COLUMN_ID + " = " + label.getID();
 
         Cursor cursor = db.rawQuery(queryString, null);
         if(cursor.moveToFirst()){

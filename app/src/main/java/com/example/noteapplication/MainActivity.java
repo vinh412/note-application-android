@@ -19,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import com.example.noteapplication.Adapter.NoteRecyclerViewAdapter;
@@ -51,6 +52,44 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private NoteModel selectedNote;
 
     private final DataBaseHelper dataBaseHelper = new DataBaseHelper(this);
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        pinRecyclerView = this.findViewById(R.id.pinRecyclerView);
+        othersRecyclerView = this.findViewById(R.id.othersRecyclerView);
+
+        floatingActionButton = findViewById(R.id.fab);
+
+        drawerLayout = findViewById(R.id.activity_main_drawer);
+        drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, NoteActivity.class);
+                intent.putExtra(KEY_WHAT_BUTTON, VALUE_FAB_BUTTON);
+                activityResultLauncher.launch(intent);
+            }
+        });
+
+        // get data from database and show them on the screen
+        allNotes = dataBaseHelper.getAllNotes();
+        pinnedNotes = dataBaseHelper.getAllPinnedNotes();
+        otherNotes = dataBaseHelper.getAllOthersNotes();
+
+        if(pinnedNotes.size() == 0){
+            updateOthersRecycler(otherNotes);
+        }else{
+            updatePinRecycler(pinnedNotes);
+            updateOthersRecycler(otherNotes);
+        }
+    }
 
     private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
@@ -96,44 +135,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 }
             });
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        pinRecyclerView = this.findViewById(R.id.pinRecyclerView);
-        othersRecyclerView = this.findViewById(R.id.othersRecyclerView);
-
-        floatingActionButton = findViewById(R.id.fab);
-
-        drawerLayout = findViewById(R.id.activity_main_drawer);
-        drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
-
-        floatingActionButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, NoteActivity.class);
-                intent.putExtra(KEY_WHAT_BUTTON, VALUE_FAB_BUTTON);
-                activityResultLauncher.launch(intent);
-            }
-        });
-
-        // get data from database and show them on the screen
-        allNotes = dataBaseHelper.getAllNotes();
-        pinnedNotes = dataBaseHelper.getAllPinnedNotes();
-        otherNotes = dataBaseHelper.getAllOthersNotes();
-
-        if(pinnedNotes.size() == 0){
-            updateOthersRecycler(otherNotes);
-        }else{
-            updatePinRecycler(pinnedNotes);
-            updateOthersRecycler(otherNotes);
-        }
-    }
-
     private void updatePinRecycler(List<NoteModel> notes) {
         pinRecyclerView.setHasFixedSize(true);
         pinRecyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL));
@@ -168,6 +169,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         PopupMenu popupMenu = new PopupMenu(this, cardView);
         popupMenu.setOnMenuItemClickListener(this);
         popupMenu.inflate(R.menu.popup_menu);
+        MenuItem item = popupMenu.getMenu().findItem(R.id.pin_unpin);
+        if(selectedNote.isPinned() == 1){
+            item.setTitle("Unpin");
+        }else{
+            item.setTitle("Pin");
+        }
         popupMenu.show();
     }
 
@@ -190,12 +197,43 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         return super.onCreateOptionsMenu(menu);
     }
 
+    private void filter(String newText) {
+        List<NoteModel> filteredPinList = new ArrayList<>();
+        List<NoteModel> filteredOtherList = new ArrayList<>();
+        for(NoteModel singleNote : allNotes){
+            if(singleNote.getHeader().toLowerCase().contains(newText.toLowerCase()) ||
+            singleNote.getContent().toLowerCase().contains(newText.toLowerCase())){
+                if(singleNote.isPinned() == 1)
+                    filteredPinList.add(singleNote);
+                else
+                    filteredOtherList.add(singleNote);
+            }
+            pinRecyclerViewAdapter.filterList(filteredPinList);
+            othersRecyclerViewAdapter.filterList(filteredOtherList);
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         if(drawerToggle.onOptionsItemSelected(item))
             return true;
         switch(item.getItemId()){
             case R.id.search:
+                SearchView searchView = (SearchView) item.getActionView();
+                searchView.setQueryHint("Type here to search");
+
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        filter(newText);
+                        return true;
+                    }
+                });
                 Toast.makeText(this, "Search button selected", Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.about:
@@ -221,6 +259,24 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 othersRecyclerViewAdapter.notifyDataSetChanged();
                 Toast.makeText(this, "Note deleted!", Toast.LENGTH_SHORT).show();
                 return true;
+
+            case R.id.pin_unpin:
+                if(selectedNote.isPinned() == 1){
+                    selectedNote.setPinned(0);
+                    dataBaseHelper.updateOne(selectedNote, 0, selectedNote.getHeader(), selectedNote.getContent(), selectedNote.getLastModified());
+                    pinnedNotes.remove(selectedNote);
+                    otherNotes.add(selectedNote);
+                    Toast.makeText(this, "Unpin", Toast.LENGTH_SHORT).show();
+                }else{
+                    selectedNote.setPinned(1);
+                    dataBaseHelper.updateOne(selectedNote, 1, selectedNote.getHeader(), selectedNote.getContent(), selectedNote.getLastModified());
+                    otherNotes.remove(selectedNote);
+                    pinnedNotes.add(selectedNote);
+                    Toast.makeText(this, "Pin", Toast.LENGTH_SHORT).show();
+                }
+                pinRecyclerViewAdapter.notifyDataSetChanged();
+                othersRecyclerViewAdapter.notifyDataSetChanged();
+
         }
         return false;
     }

@@ -8,11 +8,19 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.noteapplication.NoteClickListener;
+import com.example.noteapplication.Database.DataBaseHelper;
+import com.example.noteapplication.Model.LabelModel;
+import com.example.noteapplication.NoteItemClickListener;
 import com.example.noteapplication.Model.NoteModel;
 import com.example.noteapplication.R;
+import com.google.android.flexbox.FlexDirection;
+import com.google.android.flexbox.FlexboxItemDecoration;
+import com.google.android.flexbox.FlexboxLayoutManager;
+import com.google.android.flexbox.JustifyContent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +30,9 @@ public class NoteRecyclerViewAdapter extends RecyclerView.Adapter<NoteViewHolder
     private List<NoteModel> notes;
     private Context context;
     private LayoutInflater layoutInflater;
-    private NoteClickListener listener;
+    private NoteItemClickListener listener;
 
-    public NoteRecyclerViewAdapter(Context context, List<NoteModel> notes, NoteClickListener listener) {
+    public NoteRecyclerViewAdapter(Context context, List<NoteModel> notes, NoteItemClickListener listener) {
         this.notes = notes;
         this.context = context;
         this.layoutInflater = LayoutInflater.from(context);
@@ -34,17 +42,7 @@ public class NoteRecyclerViewAdapter extends RecyclerView.Adapter<NoteViewHolder
     @NonNull
     @Override
     public NoteViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
-//        // Inflate view from recyclerview_item_layout.xml
-//        View recyclerViewItem = layoutInflater.inflate(R.layout.recycleview_item_layout, parent, false);
-//
-//        recyclerViewItem.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                handleRecyclerItemClick( (RecyclerView)parent, v);
-//            }
-//        });
-//        return new NoteViewHolder(recyclerViewItem);
-        return new NoteViewHolder(LayoutInflater.from(context).inflate(R.layout.recycleview_item_layout, parent, false));
+        return new NoteViewHolder(LayoutInflater.from(context).inflate(R.layout.recyclerview_note_item, parent, false));
     }
 
     @Override
@@ -73,8 +71,21 @@ public class NoteRecyclerViewAdapter extends RecyclerView.Adapter<NoteViewHolder
             }
         });
 
-        int colorCode = getRandomColor();
-        holder.noteItem.setCardBackgroundColor(holder.itemView.getResources().getColor(colorCode, null));
+        holder.noteItem.setCardBackgroundColor(note.getBackGroundColor());
+
+        // display label on note item
+        DataBaseHelper dataBaseHelper = new DataBaseHelper(context);
+        List<LabelModel> labelsOnNoteItem = dataBaseHelper.getLabelsOfNote(note.getID());
+        holder.labelRecyclerView.setHasFixedSize(true);
+        FlexboxLayoutManager layoutManager = new FlexboxLayoutManager(context);
+
+        layoutManager.setFlexDirection(FlexDirection.ROW);
+        layoutManager.setJustifyContent(JustifyContent.FLEX_START);
+        holder.labelRecyclerView.setLayoutManager(layoutManager);
+
+        LabelNoteRecyclerViewAdapter labelNoteAdapter = new LabelNoteRecyclerViewAdapter(context, labelsOnNoteItem);
+        holder.labelRecyclerView.setAdapter(labelNoteAdapter);
+
     }
 
     @Override
@@ -82,18 +93,9 @@ public class NoteRecyclerViewAdapter extends RecyclerView.Adapter<NoteViewHolder
         return this.notes.size();
     }
 
-    private int getRandomColor(){
-        List<Integer> colorCode = new ArrayList<>();
-
-        colorCode.add(R.color.color1);
-        colorCode.add(R.color.color2);
-        colorCode.add(R.color.color3);
-        colorCode.add(R.color.color4);
-        colorCode.add(R.color.color5);
-
-        Random random = new Random();
-        int randomColor = random.nextInt(colorCode.size());
-        return colorCode.get(randomColor);
+    public void filterList(List<NoteModel> filteredList){
+        notes = filteredList;
+        notifyDataSetChanged();
     }
 }
 
@@ -102,6 +104,7 @@ class NoteViewHolder extends RecyclerView.ViewHolder {
     CardView noteItem;
     TextView header;
     TextView content;
+    RecyclerView labelRecyclerView;
     TextView dateCreated;
     TextView lastModified;
 
@@ -110,6 +113,7 @@ class NoteViewHolder extends RecyclerView.ViewHolder {
         this.noteItem = (CardView) itemView.findViewById(R.id.note_item);
         this.header = (TextView) itemView.findViewById(R.id.tv_header_item);
         this.content = (TextView) itemView.findViewById(R.id.tv_content_item);
+        this.labelRecyclerView = (RecyclerView) itemView.findViewById(R.id.label_note_recyclerview);
         this.dateCreated = (TextView) itemView.findViewById(R.id.tv_date_created_item);
         this.lastModified = (TextView) itemView.findViewById(R.id.tv_last_modified_item);
     }

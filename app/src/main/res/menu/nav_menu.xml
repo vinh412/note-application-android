@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group>
+        <item android:id="@+id/nav_note"
+            android:icon="@drawable/ic_note"
+            android:title="Ghi chú"/>
+        <item android:id="@+id/nav_ring"
+            android:icon="@drawable/ic_notification"
+            android:title="Lời nhắc"/>
+    </group>
+
+    <item android:title="Nhãn">
+        <menu>
+        </menu>
+    </item>
+</menu>

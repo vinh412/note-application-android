@@ -4,44 +4,47 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-import com.example.noteapplication.Adapter.LabelListViewAdapter;
 import com.example.noteapplication.Adapter.NoteRecyclerViewAdapter;
 import com.example.noteapplication.Database.DataBaseHelper;
 import com.example.noteapplication.Model.LabelModel;
 import com.example.noteapplication.Model.NoteModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener{
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
 
     public static final String KEY_WHAT_BUTTON = "what_button";
     public static final String VALUE_FAB_BUTTON = "fab_button";
     public static final String VALUE_NOTE_ITEM = "note_item";
 
     private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
     private ActionBarDrawerToggle drawerToggle;
     private FloatingActionButton floatingActionButton;
 
@@ -50,11 +53,10 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private NoteRecyclerViewAdapter pinRecyclerViewAdapter;
     private NoteRecyclerViewAdapter othersRecyclerViewAdapter;
 
-    private ListView labelListView;
-
     private List<NoteModel> allNotes = new ArrayList<>();
     private List<NoteModel> pinnedNotes = new ArrayList<>();
     private List<NoteModel> otherNotes = new ArrayList<>();
+
     private List<LabelModel> allLabels = new ArrayList<>();
 
     private NoteModel selectedNote;
@@ -73,12 +75,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
         drawerLayout = findViewById(R.id.activity_main_drawer);
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-
-        labelListView = drawerLayout.findViewById(R.id.lable_list_view);
-        Button addLabel = drawerLayout.findViewById(R.id.add_label_button);
-        addLabel.setOnClickListener(e -> {
-            dataBaseHelper.addOne(new LabelModel(-1, "First Label", "06-02-2023"));
-        });
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
@@ -106,10 +102,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             updateOthersRecycler(otherNotes);
         }
 
-        LabelListViewAdapter labelModelArrayAdapter = new LabelListViewAdapter(this, R.layout.listview_item_layout, allLabels);
-        labelListView.setAdapter(labelModelArrayAdapter);
+        NavigationView navigationView = (NavigationView)findViewById(R.id.navigation_view);
+//        navigationView.setNavigationItemSelectedListener(this);
+        onCreateLabelMenuNav();
     }
 
+    // get note from NoteActivity
     private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
                 @Override
@@ -125,31 +123,35 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                                 dataBaseHelper.addOne(newNote);
                                 pinnedNotes.clear();
                                 pinnedNotes.addAll(dataBaseHelper.getAllPinnedNotes());
-                                pinRecyclerViewAdapter.notifyDataSetChanged();
 
                                 otherNotes.clear();
                                 otherNotes.addAll(dataBaseHelper.getAllOthersNotes());
-                                othersRecyclerViewAdapter.notifyDataSetChanged();
                                 Toast.makeText(MainActivity.this, "Add new note completed!", Toast.LENGTH_SHORT).show();
                             }
                         }else if(whatButton.equals(VALUE_NOTE_ITEM)){
                             NoteModel updateNote = (NoteModel) intent.getSerializableExtra("note");
-                            if(selectedNote.isPinned() == updateNote.isPinned() && selectedNote.getHeader().equals(updateNote.getHeader()) && selectedNote.getContent().equals(updateNote.getContent())){
+                            if(selectedNote.isPinned() == updateNote.isPinned() &&
+                                    selectedNote.getHeader().equals(updateNote.getHeader()) &&
+                                    selectedNote.getContent().equals(updateNote.getContent()) &&
+                                    selectedNote.getBackGroundColor() == updateNote.getBackGroundColor()){
                                 Toast.makeText(MainActivity.this, "Nothing changes!", Toast.LENGTH_SHORT).show();
                             }
                             else{
-                                dataBaseHelper.updateOne(selectedNote, updateNote.isPinned(), updateNote.getHeader(), updateNote.getContent(), updateNote.getLastModified());
+                                dataBaseHelper.updateOne(selectedNote, updateNote.isPinned(), updateNote.getHeader(), updateNote.getContent(), updateNote.getLastModified(), updateNote.getBackGroundColor());
                                 Toast.makeText(MainActivity.this, "Save changes!", Toast.LENGTH_SHORT).show();
 
                                 pinnedNotes.clear();
                                 pinnedNotes.addAll(dataBaseHelper.getAllPinnedNotes());
-                                pinRecyclerViewAdapter.notifyDataSetChanged();
 
                                 otherNotes.clear();
                                 otherNotes.addAll(dataBaseHelper.getAllOthersNotes());
-                                othersRecyclerViewAdapter.notifyDataSetChanged();
                             }
                         }
+                        pinRecyclerViewAdapter.notifyDataSetChanged();
+                        othersRecyclerViewAdapter.notifyDataSetChanged();
+                    }else if(result.getResultCode() == 111){
+                        pinRecyclerViewAdapter.notifyDataSetChanged();
+                        othersRecyclerViewAdapter.notifyDataSetChanged();
                     }
                 }
             });
@@ -167,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         othersRecyclerViewAdapter = new NoteRecyclerViewAdapter(this, notes, noteClickListener);
         othersRecyclerView.setAdapter(othersRecyclerViewAdapter);
     }
-    private final NoteClickListener noteClickListener = new NoteClickListener() {
+    private final NoteItemClickListener noteClickListener = new NoteItemClickListener() {
         @Override
         public void onCLick(NoteModel note) {
             selectedNote = note;
@@ -279,16 +281,22 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 Toast.makeText(this, "Note deleted!", Toast.LENGTH_SHORT).show();
                 return true;
 
+            case R.id.label_popup_menu:
+                Intent intent = new Intent(MainActivity.this, ChooseLabelActivity.class);
+                intent.putExtra("id selected note", selectedNote.getID());
+                activityResultLauncher.launch(intent);
+                return true;
+
             case R.id.pin_unpin:
                 if(selectedNote.isPinned() == 1){
                     selectedNote.setPinned(0);
-                    dataBaseHelper.updateOne(selectedNote, 0, selectedNote.getHeader(), selectedNote.getContent(), selectedNote.getLastModified());
+                    dataBaseHelper.updateOne(selectedNote, 0, selectedNote.getHeader(), selectedNote.getContent(), selectedNote.getLastModified(), selectedNote.getBackGroundColor());
                     pinnedNotes.remove(selectedNote);
                     otherNotes.add(selectedNote);
                     Toast.makeText(this, "Unpin", Toast.LENGTH_SHORT).show();
                 }else{
                     selectedNote.setPinned(1);
-                    dataBaseHelper.updateOne(selectedNote, 1, selectedNote.getHeader(), selectedNote.getContent(), selectedNote.getLastModified());
+                    dataBaseHelper.updateOne(selectedNote, 1, selectedNote.getHeader(), selectedNote.getContent(), selectedNote.getLastModified(), selectedNote.getBackGroundColor());
                     otherNotes.remove(selectedNote);
                     pinnedNotes.add(selectedNote);
                     Toast.makeText(this, "Pin", Toast.LENGTH_SHORT).show();
@@ -300,4 +308,69 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         return false;
     }
 
+    private void onCreateLabelMenuNav(){
+        NavigationView navView = (NavigationView) findViewById(R.id.navigation_view);
+
+        allLabels.clear();
+        allLabels.addAll(dataBaseHelper.getAllLabels());
+
+        Menu navMenu = navView.getMenu();
+        Menu labelMenu = navMenu.getItem(2).getSubMenu();
+
+        for(LabelModel label : allLabels){
+            MenuItem newLabelItem = labelMenu.add(Menu.NONE, Menu.NONE, Menu.NONE, label.getLabelName());
+            newLabelItem.setIcon(R.drawable.ic_label);
+            newLabelItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(@NonNull MenuItem item) {
+                    Toast.makeText(MainActivity.this, newLabelItem.getTitle(), Toast.LENGTH_SHORT).show();
+                    DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main_drawer);
+                    drawer.closeDrawer(GravityCompat.START);
+                    return true;
+                }
+            });
+        }
+
+        MenuItem addLabelItem = labelMenu.add(0,0,0,"Thêm nhãn");
+        addLabelItem.setIcon(R.drawable.ic_add);
+        addLabelItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(@NonNull MenuItem item) {
+                Intent intent = new Intent(MainActivity.this, LabelActivity.class);
+                activityResultLauncher.launch(intent);
+                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main_drawer);
+                drawer.closeDrawer(GravityCompat.START);
+                return true;
+            }
+        });
+
+        navView.invalidate();
+    }
+
+//    @Override
+//    public boolean onNavigationItemSelected(MenuItem item) {
+//        switch (item.getItemId()){
+//            case R.id.nav_add_label:
+//                Intent intent = new Intent(MainActivity.this, LabelActivity.class);
+//                startActivity(intent);
+//        }
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main_drawer);
+//        drawer.closeDrawer(GravityCompat.START);
+//        return true;
+//    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

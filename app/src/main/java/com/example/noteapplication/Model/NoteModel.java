@@ -9,17 +9,19 @@ public class NoteModel implements Serializable {
     private String content;
     private String dateCreated;
     private String lastModified;
+    private int backGroundColor;
 
-    public NoteModel(int id, int isPinned, String header, String content, String dateCreated, String lastModified) {
+    public NoteModel() {
+    }
+
+    public NoteModel(int id, int isPinned, String header, String content, String dateCreated, String lastModified, int backGroundColor) {
         this.id = id;
         this.isPinned = isPinned;
         this.header = header;
         this.content = content;
         this.dateCreated = dateCreated;
         this.lastModified = lastModified;
-    }
-
-    public NoteModel() {
+        this.backGroundColor = backGroundColor;
     }
 
     public int getID() {
@@ -70,6 +72,14 @@ public class NoteModel implements Serializable {
         isPinned = pinned;
     }
 
+    public int getBackGroundColor() {
+        return backGroundColor;
+    }
+
+    public void setBackGroundColor(int backGroundColor) {
+        this.backGroundColor = backGroundColor;
+    }
+
     @Override
     public String toString() {
         return "NoteModel{" +
@@ -79,6 +89,7 @@ public class NoteModel implements Serializable {
                 ", content='" + content + '\'' +
                 ", dateCreated='" + dateCreated + '\'' +
                 ", lastModified='" + lastModified + '\'' +
+                ", backGroundColor=" + backGroundColor +
                 '}';
     }
 }
